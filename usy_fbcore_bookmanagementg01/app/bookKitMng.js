@@ -36,7 +36,7 @@ async function _setPageState(bookUri, pageCode, state, session) {
     code: pageCode,
     state: state
   };
-  let response = await appClientPost(commandUri, dtoIn, options);
+  await appClientPost(commandUri, dtoIn, options);
 }
 
 async function setPageState(bookUri, rootPageCode, state) {
@@ -50,7 +50,17 @@ async function setPageState(bookUri, rootPageCode, state) {
   for(const page of pagesToSetState) {
     await _setPageState(bookUri, page.code, state, session);
   }
+  console.info("Triggering fulltext index update.");
+  await updateFulltextIndex(bookUri, session);
   console.info(`Operation finished.`);
+}
+
+async function updateFulltextIndex(bookUri, session) {
+  let command = "updateBookIndex";
+  let commandUri = UriBuilder.parse(bookUri).setUseCase(
+      command).toUri();
+  let options = {session};
+  await appClientPost(commandUri, null, options);
 }
 
 async function _getUserSessions() {
