@@ -1,0 +1,10 @@
+{
+  "name": "usy_fbcore_initdatag01",
+  "code": "USY.FBCORE.INITDATAG01",
+  "namespace": "UsyFbcoreInitdata",
+  "version": "0.1.0",
+  "description": "Initial data for FBCORE.",
+  "vendor": "USY",
+  "license": "Licence Commercial",
+  "template": "uu5-javascript-2.0.3-ll"
+}
