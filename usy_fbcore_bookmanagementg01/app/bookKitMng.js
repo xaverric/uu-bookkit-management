@@ -39,16 +39,18 @@ async function _setPageState(bookUri, pageCode, state, session) {
   await appClientPost(commandUri, dtoIn, options);
 }
 
-async function setPageState(bookUri, rootPageCode, state) {
-  console.info(`Setting state to all pages under page with code "${rootPageCode}" to ${state}.`);
+async function setPageState(bookUri, rootPageCodes, state) {
+  console.info(`Setting state to all pages under page with codes "${rootPageCodes}" to ${state}.`);
   let session = await _getUserSessions();
   let menu = await _loadMenu(bookUri, session);
-  let selectedPages = _loadPagesUnderRoot(menu, rootPageCode);
-  console.info(`Selected pages: ${selectedPages}`);
-  let pagesToSetState = _filterOutByState(selectedPages, state);
-  console.info(`Pages to set state: ${pagesToSetState}`);
-  for(const page of pagesToSetState) {
-    await _setPageState(bookUri, page.code, state, session);
+  for(const rootPageCode of rootPageCodes) {
+    let selectedPages = _loadPagesUnderRoot(menu, rootPageCode);
+    console.info(`Selected pages: ${selectedPages}`);
+    let pagesToSetState = _filterOutByState(selectedPages, state);
+    console.info(`Pages to set state: ${pagesToSetState}`);
+    for(const page of pagesToSetState) {
+      await _setPageState(bookUri, page.code, state, session);
+    }
   }
   console.info("Triggering fulltext index update.");
   await updateFulltextIndex(bookUri, session);

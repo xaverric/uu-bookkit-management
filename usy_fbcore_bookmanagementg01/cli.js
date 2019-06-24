@@ -17,7 +17,7 @@ const parametersdefinitions =[
     name: "rootPage",
     alias: "p",
     type: String,
-    //multiple: true,
+    multiple: true,
     typeLabel: "{underline welcome}",
     description: "Code of the root page."
   },
