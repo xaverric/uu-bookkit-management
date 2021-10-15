@@ -14,20 +14,24 @@ const parametersdefinitions =[
     description: "URI to the book."
   },
   {
-    name: "rootPage",
-    alias: "p",
-    type: String,
-    multiple: true,
-    typeLabel: "{underline welcome}",
-    description: "Code of the root page."
-  },
-  {
     name: "state",
     alias: "s",
     typeLabel: "{underline active}",
     description: "State to set.",
     type: String,
     defaultOption: true
+  },
+  {
+    name: "username",
+    alias: "U",
+    type: String,
+    description: "username credentials"
+  },
+  {
+    name: "password",
+    alias: "P",
+    type: String,
+    description: "password credentials"
   },
   {
     name: "help",
@@ -38,9 +42,6 @@ const parametersdefinitions =[
 ];
 
 
-const cliDefinition = [
-  ...parametersdefinitions
-];
 const sections = [
   {
     header: "book-manager",
@@ -49,7 +50,7 @@ const sections = [
   {
     header: "Synopsis",
     content: [
-      "book-manager {bold --book} {underline bookUri} {bold --rootPage} {underline welcome} {bold --state} {underline active}",
+      "book-manager {bold --book} {underline bookUri} {bold --state} {underline active} {bold --username} {underline accessCode1} {bold --password} {underline accessCode2}",
       "book-manager {bold --help}"
     ]
   },
@@ -59,13 +60,13 @@ const sections = [
   }
 ];
 const usage = commandLineUsage(sections);
-const options = commandLineArgs(cliDefinition);
+const options = commandLineArgs(parametersdefinitions);
 
-const valid = options.help || (options.book && options.rootPage && options.state);
+const valid = options.help || (options.book && options.state);
 if (!valid || options.help) {
   console.log(usage);
   process.exit();
 }
 
 
-setState(options.book, options.rootPage, options.state);
+setState(options.book, options.state, options.username, options.password);

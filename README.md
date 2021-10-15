@@ -1,11 +1,24 @@
 # BookKit Management Tool
 
-Management tool for uuBookKit - https://uuos9.plus4u.net/uu-bookkitg01-main.
+Set all pages in the provided book to the given state and trigger indexing of all pages in the book,
 
-## Help
+## Installation
+```
+npm install
+```
 
-npm run setState
-
-## Authentication
-
-Tool uses interactive authentication that opens browser tab, lets user authenticate and fetches the OIDC Token from that session. 
+## Usage
+```
+npm run setState -- -b [bookBaseUri] -s [state] -U [accessCode1] -P [accessCode2]
+```
+### Parameters
+* URI to the book.
+    * -b, --book ```bookUri```      
+* State to set.
+    * -s, --state ```active```
+* Username credentials - access code 1
+    * -U, --username ```accessCode1```  
+* Username credentials - access code 2         
+    * -P, --password ```accessCode2```
+* Usage guide
+    * -h, --help             

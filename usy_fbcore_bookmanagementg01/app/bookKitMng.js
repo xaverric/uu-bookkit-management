@@ -1,93 +1,46 @@
-const {Config} = require("uu_appg01_core-utils");
-const DefaultConfig = require("../config/default");
-Config.activeProfiles = "development";
-Config.registerImplicitSource(DefaultConfig);
 const {UriBuilder} = require("uu_appg01_core-uri");
 const OidcToken = require("./oidc-interactive-login");
-const {AuthenticationService, AppClient} = require("uu_appg01_server-client");
-const {LoggerFactory} = require("uu_appg01_core-logging");
+const {get, post} = require("./calls.js");
 
-const logger = LoggerFactory.get("BookKitManagement");
-
-async function appClientPost(uri, dtoIn, options) {
-  let status;
-  do {
-    status = 200;
-    try {
-      return await AppClient.post(uri, dtoIn, options);
-    } catch (e) {
-      logger.debug(`Error during command call: ${JSON.stringify(e, null, 2)}`);
-      status = e.status;
-      throw e;
-    }
-  } while (status === 502 || status === 404);
-}
-
-async function appClientGet(uri, dtoIn, options) {
-  return await AppClient.get(uri, dtoIn, options);
-}
-
-async function _setPageState(bookUri, pageCode, state, session) {
-  let command = "updatePage";
-  let commandUri = UriBuilder.parse(bookUri).setUseCase(
-    command).toUri();
-  let options = {session};
+async function _setPageState(bookUri, pageCode, state, token) {
+  let commandUri = UriBuilder.parse(bookUri).setUseCase("updatePage").toUri();
   let dtoIn = {
     code: pageCode,
     state: state
   };
-  await appClientPost(commandUri, dtoIn, options);
+  await post(commandUri, dtoIn, token);
 }
 
-async function setPageState(bookUri, rootPageCodes, state) {
-  console.info(`Setting state to all pages under page with codes "${rootPageCodes}" to ${state}.`);
-  let session = await _getUserSessions();
-  let menu = await _loadMenu(bookUri, session);
-  for(const rootPageCode of rootPageCodes) {
+async function setPageState(bookUri, state, username, password) {
+  console.info(`Setting ${state} state to all pages in book "${bookUri}".`);
+  let token = await OidcToken.login(username, password);
+  let menu = await _loadMenu(bookUri, token);
+  for (const rootPageCode of Object.keys(menu.itemMap)) {
     let selectedPages = _loadPagesUnderRoot(menu, rootPageCode);
     console.info(`Selected pages: ${selectedPages}`);
     let pagesToSetState = _filterOutByState(selectedPages, state);
     console.info(`Pages to set state: ${pagesToSetState}`);
-    for(const page of pagesToSetState) {
-      await _setPageState(bookUri, page.code, state, session);
+    for (const page of pagesToSetState) {
+      await _setPageState(bookUri, page.code, state, token);
     }
   }
   console.info("Triggering fulltext index update.");
-  await updateFulltextIndex(bookUri, session);
+  await updateFulltextIndex(bookUri, token);
   console.info(`Operation finished.`);
 }
 
-async function updateFulltextIndex(bookUri, session) {
-  let command = "updateBookIndex";
-  let commandUri = UriBuilder.parse(bookUri).setUseCase(
-      command).toUri();
-  let options = {session};
-  await appClientPost(commandUri, null, options);
-}
-
-async function _getUserSessions() {
-  const token = await OidcToken.login();
-  return await AuthenticationService.authenticate(token);
-}
-
-async function _loadMenu(bookUri, session) {
-  let command = "getBookStructure";
-  let commandUri = UriBuilder.parse(bookUri).setUseCase(
-    command).toUri();
-  let options = {session};
-
-  let response = await appClientGet(commandUri, null, options);
-  return response.data.itemMap;
+async function _loadMenu(bookUri, token) {
+  let commandUri = UriBuilder.parse(bookUri).setUseCase("getBookStructure").toUri();
+  return await get(commandUri, null, token);
 }
 
 function _loadPagesUnderRoot(bookMenu, rootPage) {
-  let currentPage = bookMenu[rootPage];
+  let currentPage = bookMenu.itemMap[rootPage];
   let rootIndent = currentPage.indent;
-  // filter by page.state (!= newState)
-  console.info(`Current page: ${currentPage}`);
+  console.info(`Current page: ${JSON.stringify(currentPage)}`);
   //always add the root page since it won't be added due to its indent
-  let result = [new BookPage(rootPage, currentPage)];
-  if(currentPage.next) {
+  let result = [{page: rootPage, state: currentPage.state}];
+  if (currentPage.next) {
     result.push(..._loadSubPages(bookMenu, currentPage.next, rootIndent + 1));
   }
   return result;
@@ -95,27 +48,31 @@ function _loadPagesUnderRoot(bookMenu, rootPage) {
 
 function _loadSubPages(bookMenu, page, minIndent) {
   let result = [];
-  let currentPage = bookMenu[page];
-  if(currentPage.indent < minIndent) {
+  let currentPage = bookMenu.itemMap[page];
+  if (currentPage.indent < minIndent) {
     return [];
   }
-  result.push(new BookPage(page, currentPage));
-  let next = currentPage.next;
-  if(next) {
-    let nextPages = _loadSubPages(bookMenu, next, minIndent);
+  result.push({page: page, state: currentPage.state});
+  if (currentPage.next) {
+    let nextPages = _loadSubPages(bookMenu, currentPage.next, minIndent);
     result.push(...nextPages);
   }
   return result;
+
 }
 
 function _filterOutByState(pages, state) {
   let result = [];
   for (const page of pages) {
-    if(page.state !== state) {
+    if (page.state !== state) {
       result.push(page);
     }
   }
   return result;
+}
+async function updateFulltextIndex(bookUri, token) {
+  let commandUri = UriBuilder.parse(bookUri).setUseCase("updateBookIndex").toUri();
+  await post(commandUri, {}, token);
 }
 
 class BookPage {
