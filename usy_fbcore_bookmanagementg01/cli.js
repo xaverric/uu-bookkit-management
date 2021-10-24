@@ -14,6 +14,13 @@ const parametersdefinitions =[
     description: "URI to the book."
   },
   {
+    name: "page",
+    alias: "p",
+    type: Array,
+    typeLabel: "{underline page}",
+    description: "Top tree page."
+  },
+  {
     name: "state",
     alias: "s",
     typeLabel: "{underline active}",
@@ -51,6 +58,7 @@ const sections = [
     header: "Synopsis",
     content: [
       "book-manager {bold --book} {underline bookUri} {bold --state} {underline active} {bold --username} {underline accessCode1} {bold --password} {underline accessCode2}",
+      "book-manager {bold --book} {underline bookUri} {bold --page} {underline pageCode} {bold --state} {underline active} {bold --username} {underline accessCode1} {bold --password} {underline accessCode2}",
       "book-manager {bold --help}"
     ]
   },
@@ -69,4 +77,4 @@ if (!valid || options.help) {
 }
 
 
-setState(options.book, options.state, options.username, options.password);
+setState(options.book, options.state, options.page, options.username, options.password);

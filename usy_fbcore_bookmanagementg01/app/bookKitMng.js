@@ -2,11 +2,11 @@ const {UriBuilder} = require("uu_appg01_core-uri");
 const OidcToken = require("./oidc-interactive-login");
 const {get, post} = require("./calls.js");
 
-async function setPageState(bookUri, state, username, password) {
-  console.info(`Setting "${state}" state to all pages in book "${bookUri}".`);
+async function setState(bookUri, state, pages = [], username, password) {
+  _logStart(pages, state, bookUri);
   let token = await OidcToken.login(username, password);
   let menu = await _loadMenu(bookUri, token);
-  for (const rootPageCode of Object.keys(menu.itemMap)) {
+  for (const rootPageCode of _resolveRootPages(pages, menu)) {
     let selectedPages = _loadPagesUnderRoot(menu, rootPageCode);
     let pagesToSetState = _filterOutByState(selectedPages, state);
     for (const page of pagesToSetState) {
@@ -17,6 +17,16 @@ async function setPageState(bookUri, state, username, password) {
   console.info("Triggering fulltext index update.");
   await updateFulltextIndex(bookUri, token);
   console.info(`Operation finished.`);
+}
+
+function _resolveRootPages(pages, menu) {
+  return pages.length === 0 ? Object.keys(menu.itemMap) : pages;
+}
+
+function _logStart(pages, state, bookUri) {
+  pages.length === 0 ?
+      console.info(`Setting "${state}" state to all pages in book "${bookUri}".`) :
+      console.info(`Setting "${state}" state to all pages under the root pages "${JSON.stringify(pages)}" in book "${bookUri}".`)
 }
 
 async function _loadMenu(bookUri, token) {
@@ -74,6 +84,6 @@ async function updateFulltextIndex(bookUri, token) {
   await post(commandUri, {}, token);
 }
 
-module.exports = setPageState;
+module.exports = setState;
 
 
