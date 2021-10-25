@@ -9,11 +9,13 @@ npm install
 
 ## Usage
 ```
-npm run setState -- -b [bookBaseUri] -s [state] -U [accessCode1] -P [accessCode2]
+npm run setState -- -b [bookBaseUri] -p [pageCode] -s [state] -U [accessCode1] -P [accessCode2]
 ```
 ### Parameters
 * URI to the book.
-    * -b, --book ```bookUri```      
+    * -b, --book ```bookUri```   
+* Page code defining the top tree start position
+    * - p, --page ```pageCode```   
 * State to set.
     * -s, --state ```active```
 * Username credentials - access code 1
